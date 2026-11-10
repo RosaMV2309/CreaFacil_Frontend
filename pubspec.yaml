@@ -54,6 +54,23 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   mocktail: ^1.0.5
+  flutter_launcher_icons: ^0.14.4
+
+# Ícono de Android con la ilustración del logotipo [RNF-05].
+# Regenerar con: dart run flutter_launcher_icons
+# Los íconos web (favicon y PWA) se generan aparte para controlar el relleno
+# de los maskable, por eso aquí web e iOS están desactivados.
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: false
+  web:
+    generate: false
+  image_path: "assets/icons/icono_app.png"
+  adaptive_icon_background: "#F7B8CE"
+  adaptive_icon_foreground: "assets/icons/icono_app_foreground.png"
+  # La imagen ya trae su zona segura (ilustración al 62 % del lienzo).
+  adaptive_icon_foreground_inset: 0
+  min_sdk_android: 21
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
