@@ -15,3 +15,15 @@ android/key.properties
 coverage/
 .DS_Store
 Thumbs.db
+
+# Flutter (reglas estándar)
+.flutter-plugins-dependencies
+**/doc/api/
+.metadata.bak
+app.*.symbols
+app.*.map.json
+/android/app/debug
+/android/app/profile
+/android/app/release
+.gradle/
+android/.kotlin/
