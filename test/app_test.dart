@@ -1,6 +1,9 @@
 import 'package:creafacil_app/app.dart';
 import 'package:creafacil_app/core/design_system/cf_components.dart';
 import 'package:creafacil_app/core/widgets/cf_logo.dart';
+import 'package:creafacil_app/core/widgets/responsive_layout.dart';
+import 'package:creafacil_app/features/inicio/presentation/inicio_page.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,10 +14,48 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('CreaFácil'), findsOneWidget);
-    expect(find.byType(CfLogo), findsOneWidget);
     expect(
       find.text('Manualidades, decoraciones y murales por encargo'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('la bienvenida muestra el logotipo completo de CreaFácil', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
+    await tester.pumpAndSettle();
+
+    final enTarjeta = find.descendant(
+      of: find.byType(CfCard),
+      matching: find.byType(CfLogo),
+    );
+    expect(enTarjeta, findsOneWidget);
+    expect(tester.widget<CfLogo>(enTarjeta).variant, CfLogoVariant.completo);
+    expect(
+      find.descendant(of: enTarjeta, matching: find.byType(Image)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('el encabezado muestra la ilustración junto a «CreaFácil»', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
+    await tester.pumpAndSettle();
+
+    final encabezado = find.descendant(
+      of: find.byType(AppBar),
+      matching: find.byType(CfMarcaEncabezado),
+    );
+    expect(encabezado, findsOneWidget);
+    final icono = find.descendant(
+      of: encabezado,
+      matching: find.byType(CfLogo),
+    );
+    expect(tester.widget<CfLogo>(icono).variant, CfLogoVariant.icono);
+    expect(
+      find.descendant(of: encabezado, matching: find.text('CreaFácil')),
       findsOneWidget,
     );
   });
@@ -59,6 +100,14 @@ void main() {
       final tarjeta = tester.getRect(find.byType(CfCard));
       expect(tarjeta.left, greaterThanOrEqualTo(0));
       expect(tarjeta.right, lessThanOrEqualTo(ancho));
+
+      // El logotipo completo cabe en la tarjeta y cambia de tamaño.
+      final logo = tester.getRect(
+        find.descendant(of: find.byType(CfCard), matching: find.byType(CfLogo)),
+      );
+      expect(logo.left, greaterThanOrEqualTo(tarjeta.left));
+      expect(logo.right, lessThanOrEqualTo(tarjeta.right));
+      expect(logo.width, InicioPage.tamanoLogo(PuntosCorte.de(ancho)));
     });
   }
 }

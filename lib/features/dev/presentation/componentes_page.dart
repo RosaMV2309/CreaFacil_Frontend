@@ -46,9 +46,15 @@ class _ComponentesPageState extends State<ComponentesPage> {
                 CfCard(
                   title: 'Marca y diseño adaptable',
                   subtitle: 'Tamaño de pantalla actual: ${tamano.name}',
-                  child: const Align(
-                    alignment: Alignment.centerLeft,
-                    child: CfLogo(),
+                  child: Wrap(
+                    spacing: tokens.espacioXl,
+                    runSpacing: tokens.espacioLg,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: const [
+                      CfLogo(size: 140),
+                      CfLogo(variant: CfLogoVariant.icono, size: 72),
+                      CfMarcaTexto(),
+                    ],
                   ),
                 ),
                 separacion,

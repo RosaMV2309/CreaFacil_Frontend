@@ -97,6 +97,12 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
+  # Logotipo de CreaFácil [RNF-05]: completo (bienvenida) e ilustración
+  # recortada (encabezados). Originales en CONTEXTO/ del espacio de trabajo.
+  assets:
+    - assets/images/logo.png
+    - assets/images/logo_icono.png
+
   # Identidad visual de CreaFácil [RNF-05]: fuentes locales con licencia OFL.
   fonts:
     - family: Poppins

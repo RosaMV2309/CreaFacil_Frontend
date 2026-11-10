@@ -7,20 +7,30 @@ import '../../../core/router/rutas.dart';
 import '../../../core/widgets/cf_logo.dart';
 import '../../../core/widgets/responsive_layout.dart';
 
-/// Pantalla de inicio provisional con la identidad visual de CreaFácil.
+/// Pantalla de bienvenida provisional con la identidad visual de CreaFácil:
+/// encabezado con la ilustración y el logotipo completo destacado.
 /// Todavía no consulta la API (eso llega en la subfase 0.8).
 class InicioPage extends StatelessWidget {
   const InicioPage({super.key});
 
   static const subtitulo = 'Manualidades, decoraciones y murales por encargo';
 
+  /// Lado del logotipo completo según el tamaño de pantalla [RNF-05].
+  static double tamanoLogo(TamanoPantalla tamano) => switch (tamano) {
+    TamanoPantalla.movil => 180,
+    TamanoPantalla.tablet => 220,
+    TamanoPantalla.escritorio => 260,
+  };
+
   @override
   Widget build(BuildContext context) {
     final tokens = CfTokens.of(context);
     final textos = Theme.of(context).textTheme;
-    final movil = PuntosCorte.deContexto(context) == TamanoPantalla.movil;
+    final tamano = PuntosCorte.deContexto(context);
+    final movil = tamano == TamanoPantalla.movil;
 
     return Scaffold(
+      appBar: AppBar(title: const CfMarcaEncabezado()),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -36,7 +46,7 @@ class InicioPage extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CfLogo(size: movil ? 36 : 44),
+                    CfLogo(size: tamanoLogo(tamano)),
                     SizedBox(height: tokens.espacioLg),
                     Text(
                       subtitulo,
