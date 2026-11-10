@@ -16,7 +16,7 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Flutter (reglas estándar)
+# Flutter (reglas estÃ¡ndar)
 .flutter-plugins-dependencies
 **/doc/api/
 .metadata.bak
