@@ -1,17 +1,25 @@
 import 'package:creafacil_app/app.dart';
-import 'package:creafacil_app/core/design_system/cf_components.dart';
 import 'package:creafacil_app/core/widgets/cf_logo.dart';
 import 'package:creafacil_app/core/widgets/responsive_layout.dart';
+import 'package:creafacil_app/features/contacto/presentation/boton_whatsapp.dart';
+import 'package:creafacil_app/features/estado_api/presentation/estado_api_tarjeta.dart';
 import 'package:creafacil_app/features/inicio/presentation/inicio_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'helpers/api_falsa.dart';
 import 'helpers/envolver.dart';
+
+/// La app con la API simulada «conectada» (las pruebas no usan la red).
+Widget appDePrueba() =>
+    ProviderScope(overrides: apiConectada(), child: const CreaFacilApp());
+
+final tarjetaBienvenida = find.byKey(InicioPage.claveBienvenida);
 
 void main() {
   testWidgets('muestra la pantalla de inicio de CreaFácil', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
+    await tester.pumpWidget(appDePrueba());
     await tester.pumpAndSettle();
 
     expect(
@@ -23,11 +31,11 @@ void main() {
   testWidgets('la bienvenida muestra el logotipo completo de CreaFácil', (
     tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
+    await tester.pumpWidget(appDePrueba());
     await tester.pumpAndSettle();
 
     final enTarjeta = find.descendant(
-      of: find.byType(CfCard),
+      of: tarjetaBienvenida,
       matching: find.byType(CfLogo),
     );
     expect(enTarjeta, findsOneWidget);
@@ -41,7 +49,7 @@ void main() {
   testWidgets('el encabezado muestra la ilustración junto a «CreaFácil»', (
     tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
+    await tester.pumpWidget(appDePrueba());
     await tester.pumpAndSettle();
 
     final encabezado = find.descendant(
@@ -63,7 +71,7 @@ void main() {
   testWidgets('el botón de prueba del inicio avisa que llega pronto', (
     tester,
   ) async {
-    await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
+    await tester.pumpWidget(appDePrueba());
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Explorar el catálogo'));
@@ -75,8 +83,25 @@ void main() {
     );
   });
 
+  testWidgets('el inicio muestra el estado de la API y el botón de WhatsApp', (
+    tester,
+  ) async {
+    await tester.pumpWidget(appDePrueba());
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EstadoApiTarjeta), findsOneWidget);
+    expect(find.text(EstadoApiTarjeta.textoConectado), findsOneWidget);
+    expect(
+      find.descendant(
+        of: tarjetaBienvenida,
+        matching: find.byType(BotonWhatsApp),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('en modo debug abre el catálogo de componentes', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
+    await tester.pumpWidget(appDePrueba());
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Ver componentes'));
@@ -93,17 +118,22 @@ void main() {
     ) async {
       fijarVentana(tester, ancho);
 
-      await tester.pumpWidget(const ProviderScope(child: CreaFacilApp()));
+      await tester.pumpWidget(appDePrueba());
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      final tarjeta = tester.getRect(find.byType(CfCard));
-      expect(tarjeta.left, greaterThanOrEqualTo(0));
-      expect(tarjeta.right, lessThanOrEqualTo(ancho));
+      for (final tarjeta in [
+        tester.getRect(tarjetaBienvenida),
+        tester.getRect(find.byType(EstadoApiTarjeta)),
+      ]) {
+        expect(tarjeta.left, greaterThanOrEqualTo(0));
+        expect(tarjeta.right, lessThanOrEqualTo(ancho));
+      }
 
       // El logotipo completo cabe en la tarjeta y cambia de tamaño.
+      final tarjeta = tester.getRect(tarjetaBienvenida);
       final logo = tester.getRect(
-        find.descendant(of: find.byType(CfCard), matching: find.byType(CfLogo)),
+        find.descendant(of: tarjetaBienvenida, matching: find.byType(CfLogo)),
       );
       expect(logo.left, greaterThanOrEqualTo(tarjeta.left));
       expect(logo.right, lessThanOrEqualTo(tarjeta.right));
