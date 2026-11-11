@@ -6,14 +6,18 @@ import '../../../core/design_system/cf_components.dart';
 import '../../../core/router/rutas.dart';
 import '../../../core/widgets/cf_logo.dart';
 import '../../../core/widgets/responsive_layout.dart';
+import '../../contacto/presentation/boton_whatsapp.dart';
+import '../../estado_api/presentation/estado_api_tarjeta.dart';
 
-/// Pantalla de bienvenida provisional con la identidad visual de CreaFácil:
-/// encabezado con la ilustración y el logotipo completo destacado.
-/// Todavía no consulta la API (eso llega en la subfase 0.8).
+/// Pantalla de bienvenida de la app del cliente: logotipo, accesos y el
+/// estado de la conexión con la API [RNF-04][RNF-05].
 class InicioPage extends StatelessWidget {
   const InicioPage({super.key});
 
   static const subtitulo = 'Manualidades, decoraciones y murales por encargo';
+
+  /// Clave de la tarjeta de bienvenida (la del logotipo).
+  static const claveBienvenida = ValueKey('inicio-bienvenida');
 
   /// Lado del logotipo completo según el tamaño de pantalla [RNF-05].
   static double tamanoLogo(TamanoPantalla tamano) => switch (tamano) {
@@ -39,39 +43,50 @@ class InicioPage extends StatelessWidget {
             ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 520),
-              child: CfCard(
-                padding: EdgeInsets.all(
-                  movil ? tokens.espacioXl : tokens.espacioXxl,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CfLogo(size: tamanoLogo(tamano)),
-                    SizedBox(height: tokens.espacioLg),
-                    Text(
-                      subtitulo,
-                      textAlign: TextAlign.center,
-                      style: textos.bodyLarge,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  CfCard(
+                    key: claveBienvenida,
+                    padding: EdgeInsets.all(
+                      movil ? tokens.espacioXl : tokens.espacioXxl,
                     ),
-                    SizedBox(height: tokens.espacioXl),
-                    CfButton(
-                      label: 'Explorar el catálogo',
-                      icon: Icons.palette_outlined,
-                      expanded: movil,
-                      onPressed: () => _avisoProximamente(context),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CfLogo(size: tamanoLogo(tamano)),
+                        SizedBox(height: tokens.espacioLg),
+                        Text(
+                          subtitulo,
+                          textAlign: TextAlign.center,
+                          style: textos.bodyLarge,
+                        ),
+                        SizedBox(height: tokens.espacioXl),
+                        CfButton(
+                          label: 'Explorar el catálogo',
+                          icon: Icons.palette_outlined,
+                          expanded: movil,
+                          onPressed: () => _avisoProximamente(context),
+                        ),
+                        SizedBox(height: tokens.espacioMd),
+                        BotonWhatsApp(expanded: movil),
+                        if (kDebugMode) ...[
+                          SizedBox(height: tokens.espacioSm),
+                          CfButton(
+                            label: 'Ver componentes',
+                            variant: CfButtonVariant.text,
+                            icon: Icons.widgets_outlined,
+                            tooltip: 'Solo en modo desarrollo',
+                            onPressed: () => context.push(Rutas.componentes),
+                          ),
+                        ],
+                      ],
                     ),
-                    if (kDebugMode) ...[
-                      SizedBox(height: tokens.espacioSm),
-                      CfButton(
-                        label: 'Ver componentes',
-                        variant: CfButtonVariant.text,
-                        icon: Icons.widgets_outlined,
-                        tooltip: 'Solo en modo desarrollo',
-                        onPressed: () => context.push(Rutas.componentes),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                  SizedBox(height: tokens.espacioLg),
+                  const EstadoApiTarjeta(),
+                ],
               ),
             ),
           ),
