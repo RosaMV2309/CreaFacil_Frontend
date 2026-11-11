@@ -17,4 +17,13 @@ abstract final class AppConfig {
 
   /// Tiempo máximo de espera de la respuesta de la API.
   static const Duration tiempoRespuesta = Duration(seconds: 20);
+
+  /// Número de WhatsApp del negocio, solo con dígitos y el prefijo del país
+  /// (por ejemplo, `593…`). Vacío por defecto: el botón de contacto queda
+  /// deshabilitado hasta que se configure.
+  ///
+  /// `--dart-define=WHATSAPP_NUMERO=593000000000`
+  static const String whatsappNumero = String.fromEnvironment(
+    'WHATSAPP_NUMERO',
+  );
 }
