@@ -60,7 +60,7 @@ jobs:
 
       - name: Publicar el informe de cobertura
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: cobertura-lcov
           path: coverage/lcov.info
@@ -79,7 +79,7 @@ jobs:
         run: flutter build web --release
 
       - name: Publicar build/web
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: creafacil-web
           path: build/web
@@ -134,7 +134,7 @@ jobs:
         run: flutter build apk --release
 
       - name: Publicar el APK debug
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: creafacil-apk-debug
           path: build/app/outputs/flutter-apk/app-debug.apk
@@ -142,7 +142,7 @@ jobs:
           retention-days: 14
 
       - name: Publicar el APK release
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: creafacil-apk-release
           path: build/app/outputs/flutter-apk/app-release.apk
