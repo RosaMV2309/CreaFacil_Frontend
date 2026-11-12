@@ -2,6 +2,7 @@
 #
 # - calidad: formato, análisis, pruebas con umbral de cobertura, paleta
 #   oficial y compilación web.
+# - android: compila el APK (debug y release) y los publica como artefactos.
 name: CI
 
 on:
@@ -85,3 +86,65 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  android:
+    name: APK de Android
+    needs: calidad
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      # AGP 9.1 exige JDK 17 o superior y el proyecto compila para Java 17
+      # (compileOptions y jvmTarget en android/app/build.gradle.kts).
+      - name: Instalar Java 17 (Temurin)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Instalar Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Dependencias
+        run: flutter pub get
+
+      # El plugin jni (flutter_secure_storage -> path_provider_android) usa el
+      # NDK 28.2.13676358 y CMake. Si la imagen del runner no los trae, el
+      # plugin de Android de Gradle los descarga solo (las licencias del SDK
+      # ya están aceptadas en ubuntu-latest).
+      - name: NDK y CMake disponibles
+        run: ls "$ANDROID_HOME/ndk" "$ANDROID_HOME/cmake" || true
+
+      # APK de pruebas: debug permite HTTP solo hacia 10.0.2.2 y localhost
+      # (src/debug/res/xml/network_security_config.xml), así que funciona en
+      # el emulador con el backend local.
+      - name: Compilar el APK debug (pruebas en el emulador)
+        run: flutter build apk --debug --dart-define=API_URL=${{ env.API_URL_EMULADOR }}
+
+      # APK release: comprueba la configuración de producción (R8, recursos y
+      # firma). Se firma con la clave de depuración hasta tener una propia y
+      # exige HTTPS, así que necesita una API publicada con https://.
+      - name: Compilar el APK release
+        run: flutter build apk --release
+
+      - name: Publicar el APK debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: creafacil-apk-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publicar el APK release
+        uses: actions/upload-artifact@v4
+        with:
+          name: creafacil-apk-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 14

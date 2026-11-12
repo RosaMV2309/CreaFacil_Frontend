@@ -15,24 +15,25 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Identificador único de CreaFácil en Android (no cambiarlo: Android lo
+        // usa para distinguir la app y sus actualizaciones).
         applicationId = "com.creafacil.creafacil_app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // minSdk 24 (Android 7.0) y targetSdk 36, los valores por defecto de Flutter 3.47.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
-        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
-        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
-        // flag during build.
+        // versionCode y versionName salen de `version:` en pubspec.yaml.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // El nombre visible («CreaFácil») está en src/main/AndroidManifest.xml.
+        // La URL de la API y el WhatsApp se pasan al compilar, por ejemplo:
+        //   flutter build apk --release --dart-define=API_URL=https://... --dart-define=WHATSAPP_NUMERO=593...
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Todavía no hay una clave de firma propia: el APK release se firma con la
+            // clave de depuración para poder instalarlo en pruebas. Antes de publicar en
+            // una tienda hay que crear un keystore propio y configurarlo aquí.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
