@@ -1,0 +1,150 @@
+# CI de la app móvil del cliente de CreaFácil [RNF-06] [RF-24].
+#
+# - calidad: formato, análisis, pruebas con umbral de cobertura, paleta
+#   oficial y compilación web.
+# - android: compila el APK (debug y release) y los publica como artefactos.
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.47.9
+  # URL de la API para el APK de pruebas: el emulador de Android ve el PC en
+  # 10.0.2.2 y el backend local escucha en el puerto 3000.
+  API_URL_EMULADOR: http://10.0.2.2:3000/api/v1
+
+jobs:
+  calidad:
+    name: Análisis, pruebas y build web
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      - name: Instalar Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Versión de Flutter
+        run: flutter --version
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Formato (dart format)
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Análisis estático (flutter analyze)
+        run: flutter analyze
+
+      - name: Pruebas con cobertura
+        run: flutter test --coverage
+
+      - name: Umbral de cobertura de líneas (80 %)
+        run: dart run tool/cobertura.dart --detalle
+
+      - name: Publicar el informe de cobertura
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: cobertura-lcov
+          path: coverage/lcov.info
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Paleta oficial (sin colores fuera de app_colors.dart)
+        run: |
+          if git grep -nP "Color\(0x|\bColors\.(?!transparent)" -- lib ':!lib/core/theme/app_colors.dart'; then
+            echo "::error::Hay colores fuera de la paleta oficial. Usa AppColors (lib/core/theme/app_colors.dart)."
+            exit 1
+          fi
+          echo "Sin colores fuera de la paleta oficial."
+
+      - name: Compilar la versión web
+        run: flutter build web --release
+
+      - name: Publicar build/web
+        uses: actions/upload-artifact@v7
+        with:
+          name: creafacil-web
+          path: build/web
+          if-no-files-found: error
+          retention-days: 14
+
+  android:
+    name: APK de Android
+    needs: calidad
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      # AGP 9.1 exige JDK 17 o superior y el proyecto compila para Java 17
+      # (compileOptions y jvmTarget en android/app/build.gradle.kts).
+      - name: Instalar Java 17 (Temurin)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Instalar Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Dependencias
+        run: flutter pub get
+
+      # El plugin jni (flutter_secure_storage -> path_provider_android) usa el
+      # NDK 28.2.13676358 y CMake. Si la imagen del runner no los trae, el
+      # plugin de Android de Gradle los descarga solo (las licencias del SDK
+      # ya están aceptadas en ubuntu-latest).
+      - name: NDK y CMake disponibles
+        run: ls "$ANDROID_HOME/ndk" "$ANDROID_HOME/cmake" || true
+
+      # APK de pruebas: debug permite HTTP solo hacia 10.0.2.2 y localhost
+      # (src/debug/res/xml/network_security_config.xml), así que funciona en
+      # el emulador con el backend local.
+      - name: Compilar el APK debug (pruebas en el emulador)
+        run: flutter build apk --debug --dart-define=API_URL=${{ env.API_URL_EMULADOR }}
+
+      # APK release: comprueba la configuración de producción (R8, recursos y
+      # firma). Se firma con la clave de depuración hasta tener una propia y
+      # exige HTTPS, así que necesita una API publicada con https://.
+      - name: Compilar el APK release
+        run: flutter build apk --release
+
+      - name: Publicar el APK debug
+        uses: actions/upload-artifact@v7
+        with:
+          name: creafacil-apk-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publicar el APK release
+        uses: actions/upload-artifact@v7
+        with:
+          name: creafacil-apk-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
