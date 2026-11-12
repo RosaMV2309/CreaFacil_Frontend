@@ -1,0 +1,87 @@
+# CI de la app móvil del cliente de CreaFácil [RNF-06] [RF-24].
+#
+# - calidad: formato, análisis, pruebas con umbral de cobertura, paleta
+#   oficial y compilación web.
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.47.9
+  # URL de la API para el APK de pruebas: el emulador de Android ve el PC en
+  # 10.0.2.2 y el backend local escucha en el puerto 3000.
+  API_URL_EMULADOR: http://10.0.2.2:3000/api/v1
+
+jobs:
+  calidad:
+    name: Análisis, pruebas y build web
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v5
+
+      - name: Instalar Flutter ${{ env.FLUTTER_VERSION }}
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Versión de Flutter
+        run: flutter --version
+
+      - name: Dependencias
+        run: flutter pub get
+
+      - name: Formato (dart format)
+        run: dart format --output=none --set-exit-if-changed lib test tool
+
+      - name: Análisis estático (flutter analyze)
+        run: flutter analyze
+
+      - name: Pruebas con cobertura
+        run: flutter test --coverage
+
+      - name: Umbral de cobertura de líneas (80 %)
+        run: dart run tool/cobertura.dart --detalle
+
+      - name: Publicar el informe de cobertura
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-lcov
+          path: coverage/lcov.info
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Paleta oficial (sin colores fuera de app_colors.dart)
+        run: |
+          if git grep -nP "Color\(0x|\bColors\.(?!transparent)" -- lib ':!lib/core/theme/app_colors.dart'; then
+            echo "::error::Hay colores fuera de la paleta oficial. Usa AppColors (lib/core/theme/app_colors.dart)."
+            exit 1
+          fi
+          echo "Sin colores fuera de la paleta oficial."
+
+      - name: Compilar la versión web
+        run: flutter build web --release
+
+      - name: Publicar build/web
+        uses: actions/upload-artifact@v4
+        with:
+          name: creafacil-web
+          path: build/web
+          if-no-files-found: error
+          retention-days: 14
+
