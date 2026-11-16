@@ -134,6 +134,53 @@ tool/
 └── cobertura.dart              # umbral de cobertura (CI y local)
 ```
 
+## Acceso de clientes (Fase 1 · RF-01, RF-02, RNF-01)
+
+La app permite **crear una cuenta, iniciar sesión y ver «Mi perfil»**. Código en
+`lib/features/autenticacion/` (domain / data / presentation).
+
+**Flujo**
+
+1. Inicio (público): logo, estado de la API, WhatsApp y la tarjeta «Tu cuenta» con
+   «Iniciar sesión» y «Crear cuenta». Con sesión muestra «Hola, `nombre`» y «Mi perfil».
+2. `/registro`: nombre (2 a 120), correo, teléfono opcional (`+` opcional y de 7 a 15 dígitos;
+   se aceptan espacios, guiones y paréntesis), contraseña de 8 a 72 caracteres y su confirmación
+   (solo en la app; no se envía). Al registrarse, la sesión queda iniciada.
+3. `/acceso`: correo y contraseña (con botón para mostrarla). No hay «¿Olvidaste tu contraseña?» en la v1.
+4. `/perfil` (protegida): nombre, correo, teléfono y rol «Cliente». La edición llegará con
+   `PATCH /auth/perfil` (subfase 1.2 del backend): por ahora «Editar perfil» está deshabilitado
+   con «Disponible próximamente». «Cerrar sesión» pide confirmación.
+
+API consumida: `POST /auth/registro`, `POST /auth/login` y `GET /auth/perfil`.
+
+**Sesión y token**
+
+- El token JWT, `expiraEn` y el usuario se guardan con `flutter_secure_storage`
+  (Android Keystore; en web, cifrado con WebCrypto en el almacenamiento local) detrás de la
+  abstracción `AlmacenSesion`, que las pruebas sustituyen por un almacén en memoria.
+- `ProveedorTokenSesion` entrega el token al `ApiClient`. El JWT dura 8 horas y **no se renueva**.
+- Al arrancar se restaura la sesión: si `expiraEn` ya pasó, se borra; si no, se valida con
+  `GET /auth/perfil` y se borra si la API responde 401. Sin conexión se conserva y la API la
+  verificará en la siguiente petición.
+- Si caduca mientras se usa la app o la API responde **401 a una petición autenticada**
+  (lo detecta `InterceptorToken`), se cierra la sesión, se vuelve a `/acceso` (recordando el destino)
+  y se muestra «Tu sesión expiró, vuelve a iniciar sesión.».
+- Cerrar sesión borra todo lo guardado.
+
+**Errores**: los del servidor se muestran con `CfMessage` y con el mensaje de la API:
+401 «Correo o contraseña incorrectos.», 403 cuenta desactivada, 409 «Ya existe una cuenta con ese
+correo.» (con enlace para iniciar sesión), 429 demasiados intentos (con el tiempo de espera) y los
+detalles por campo del 400 en su campo.
+
+**Solo clientes**: la app móvil es para clientes. Si inicia sesión la administradora, la sesión
+**no se guarda** y se muestra «Esta app es para clientes. Usa el panel administrativo.». Es una
+comprobación de navegación: los permisos reales los verifica siempre el servidor (RNF-03, RN-05).
+
+**Código compartido con CreaFacil_AdminWeb**: `lib/core/` y, en `features/autenticacion/`, el dominio,
+los modelos, el repositorio, `AlmacenSesion`, el controlador de sesión, los providers y el
+formulario de acceso son idénticos. Solo cambian `presentation/configuracion_acceso.dart` (rol
+permitido, mensaje de rechazo y almacén), el almacén concreto y las pantallas.
+
 ## Identidad visual
 
 Solo se usan los colores de la paleta oficial, definidos en `lib/core/theme/app_colors.dart`:
