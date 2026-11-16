@@ -231,6 +231,46 @@ class _ComponentesPageState extends State<ComponentesPage> {
                   ),
                 ),
                 separacion,
+                CfCard(
+                  title: 'CfInputText, CfPassword y CfConfirmDialog',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const CfInputText(
+                        label: 'Correo electrónico',
+                        hint: 'nombre@correo.com',
+                        prefixIcon: Icons.mail_outline_rounded,
+                        helper: 'Texto de ayuda bajo el campo',
+                      ),
+                      SizedBox(height: tokens.espacioLg),
+                      const CfInputText(
+                        label: 'Campo con error',
+                        errorText: 'Mensaje de error del servidor',
+                      ),
+                      SizedBox(height: tokens.espacioLg),
+                      const CfPassword(label: 'Contraseña'),
+                      SizedBox(height: tokens.espacioLg),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: CfButton(
+                          label: 'Abrir confirmación',
+                          variant: CfButtonVariant.outlined,
+                          onPressed: () async {
+                            final ok = await CfConfirmDialog.mostrar(
+                              context,
+                              titulo: 'Cerrar sesión',
+                              mensaje: '¿Quieres cerrar tu sesión?',
+                              textoConfirmar: 'Cerrar sesión',
+                              peligro: true,
+                            );
+                            _avisar(ok ? 'Confirmado' : 'Cancelado');
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                separacion,
                 Wrap(
                   spacing: tokens.espacioXl,
                   runSpacing: tokens.espacioXl,
