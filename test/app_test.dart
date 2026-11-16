@@ -10,10 +10,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers/api_falsa.dart';
 import 'helpers/envolver.dart';
+import 'helpers/sesion_falsa.dart';
 
-/// La app con la API simulada «conectada» (las pruebas no usan la red).
-Widget appDePrueba() =>
-    ProviderScope(overrides: apiConectada(), child: const CreaFacilApp());
+/// La app con la API simulada «conectada» y sin sesión (las pruebas no usan
+/// la red ni el almacenamiento real).
+Widget appDePrueba() => ProviderScope(
+  overrides: [...apiConectada(), ...sesionSimulada()],
+  child: const CreaFacilApp(),
+);
 
 final tarjetaBienvenida = find.byKey(InicioPage.claveBienvenida);
 
