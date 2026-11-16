@@ -104,13 +104,18 @@ class ApiClient {
   }
 }
 
-/// Añade `Authorization: Bearer <token>` cuando hay sesión.
+/// Añade `Authorization: Bearer <token>` cuando hay sesión y avisa al
+/// [ProveedorToken] si la API rechaza ese token con un 401 [RF-01][RNF-01].
 ///
-/// En la Fase 0 el [ProveedorToken] devuelve `null` y no se añade nada.
+/// Solo se avisa cuando la petición **llevaba** el token de la sesión: un 401
+/// del inicio de sesión (credenciales incorrectas) no cierra nada.
 class InterceptorToken extends Interceptor {
   InterceptorToken(this._proveedor);
 
   final ProveedorToken _proveedor;
+
+  /// Marca en `RequestOptions.extra` de las peticiones con el token añadido.
+  static const claveConToken = 'creafacil.conToken';
 
   @override
   Future<void> onRequest(
@@ -121,6 +126,7 @@ class InterceptorToken extends Interceptor {
       final token = await _proveedor.obtenerToken();
       if (token != null && token.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $token';
+        options.extra[claveConToken] = true;
       }
       handler.next(options);
     } on Object catch (error) {
@@ -136,5 +142,14 @@ class InterceptorToken extends Interceptor {
         ),
       );
     }
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (err.response?.statusCode == 401 &&
+        err.requestOptions.extra[claveConToken] == true) {
+      _proveedor.tokenRechazado();
+    }
+    handler.next(err);
   }
 }

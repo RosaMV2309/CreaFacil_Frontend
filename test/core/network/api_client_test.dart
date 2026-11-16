@@ -6,15 +6,20 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../helpers/api_falsa.dart';
 
 class _TokenFijo implements ProveedorToken {
-  const _TokenFijo(this.token);
+  _TokenFijo(this.token);
   final String? token;
+  int rechazos = 0;
   @override
   Future<String?> obtenerToken() async => token;
+  @override
+  void tokenRechazado() => rechazos++;
 }
 
 class _TokenQueFalla implements ProveedorToken {
   @override
   Future<String?> obtenerToken() => Future.error(StateError('almacén'));
+  @override
+  void tokenRechazado() {}
 }
 
 void main() {
@@ -58,11 +63,66 @@ void main() {
   });
 
   test('con token envía Authorization: Bearer', () async {
-    await cliente(token: const _TokenFijo('abc.def.ghi')).post('/x');
+    await cliente(token: _TokenFijo('abc.def.ghi')).post('/x');
     expect(
       adaptador.peticiones.single.headers['Authorization'],
       'Bearer abc.def.ghi',
     );
+  });
+
+  group('401 en una petición autenticada [RF-01]', () {
+    Map<String, Object> cuerpo401(String codigo) => {
+      'error': {'codigo': codigo, 'mensaje': 'Tu sesión ha expirado.'},
+    };
+
+    test('con token: avisa al proveedor y lanza noAutorizado', () async {
+      adaptador = AdaptadorHttpFalso(
+        (o) async => respuestaJson(401, cuerpo401('TOKEN_EXPIRADO')),
+      );
+      final token = _TokenFijo('abc');
+      await expectLater(
+        cliente(token: token).get('/auth/perfil'),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.codigo,
+            'codigo',
+            'TOKEN_EXPIRADO',
+          ),
+        ),
+      );
+      expect(token.rechazos, 1);
+    });
+
+    test('sin token (p. ej. login fallido): no avisa', () async {
+      adaptador = AdaptadorHttpFalso(
+        (o) async => respuestaJson(401, cuerpo401('CREDENCIALES_INVALIDAS')),
+      );
+      final token = _TokenFijo(null);
+      await expectLater(
+        cliente(token: token).post('/auth/login'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(token.rechazos, 0);
+    });
+
+    test('otros errores con token (403) no avisan', () async {
+      adaptador = AdaptadorHttpFalso(
+        (o) async => respuestaJson(403, {
+          'error': {'codigo': 'PROHIBIDO', 'mensaje': 'No'},
+        }),
+      );
+      final token = _TokenFijo('abc');
+      await expectLater(
+        cliente(token: token).get('/admin'),
+        throwsA(isA<ApiException>()),
+      );
+      expect(token.rechazos, 0);
+    });
+
+    test('ProveedorTokenSinSesion.tokenRechazado no hace nada', () async {
+      const ProveedorTokenSinSesion().tokenRechazado();
+      expect(await const ProveedorTokenSinSesion().obtenerToken(), isNull);
+    });
   });
 
   test('si el proveedor de token falla, lanza ApiException noAutorizado', () {
