@@ -9,7 +9,9 @@ final apiUrlProvider = Provider<String>((ref) => AppConfig.apiUrl);
 
 /// Fuente del token JWT.
 ///
-/// TODO(Fase 1, RF-01 y RF-02): sustituir por el proveedor de la sesión.
+/// Por defecto no hay sesión. La app lo sustituye por el proveedor de la
+/// sesión (`overridesAutenticacion` de `features/autenticacion`) en el
+/// `ProviderScope` de `main.dart` [RF-01].
 final proveedorTokenProvider = Provider<ProveedorToken>(
   (ref) => const ProveedorTokenSinSesion(),
 );

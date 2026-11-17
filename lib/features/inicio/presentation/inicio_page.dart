@@ -6,6 +6,7 @@ import '../../../core/design_system/cf_components.dart';
 import '../../../core/router/rutas.dart';
 import '../../../core/widgets/cf_logo.dart';
 import '../../../core/widgets/responsive_layout.dart';
+import '../../autenticacion/presentation/widgets/cuenta_widgets.dart';
 import '../../contacto/presentation/boton_whatsapp.dart';
 import '../../estado_api/presentation/estado_api_tarjeta.dart';
 
@@ -34,7 +35,10 @@ class InicioPage extends StatelessWidget {
     final movil = tamano == TamanoPantalla.movil;
 
     return Scaffold(
-      appBar: AppBar(title: const CfMarcaEncabezado()),
+      appBar: AppBar(
+        title: const CfMarcaEncabezado(),
+        actions: const [AccionCuenta(), SizedBox(width: 8)],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -84,6 +88,8 @@ class InicioPage extends StatelessWidget {
                       ],
                     ),
                   ),
+                  SizedBox(height: tokens.espacioLg),
+                  TarjetaCuenta(expandido: movil),
                   SizedBox(height: tokens.espacioLg),
                   const EstadoApiTarjeta(),
                 ],
