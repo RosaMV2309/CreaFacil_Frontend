@@ -1,3 +1,4 @@
+import 'cambios_perfil.dart';
 import 'sesion.dart';
 import 'usuario.dart';
 
@@ -37,4 +38,8 @@ abstract interface class AutenticacionRepository {
 
   /// `GET /auth/perfil` con el [token] indicado → 200 con el usuario.
   Future<Usuario> obtenerPerfil(String token);
+
+  /// `PATCH /auth/perfil` con el token de la sesión → 200 con el usuario
+  /// actualizado. Solo envía los campos de [cambios] (RF-01, RN-05).
+  Future<Usuario> actualizarPerfil(CambiosPerfil cambios);
 }

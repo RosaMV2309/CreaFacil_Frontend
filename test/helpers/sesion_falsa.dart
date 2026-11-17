@@ -1,6 +1,7 @@
 import 'package:creafacil_app/core/network/red.dart';
 import 'package:creafacil_app/features/autenticacion/data/almacen_sesion.dart';
 import 'package:creafacil_app/features/autenticacion/domain/autenticacion_repository.dart';
+import 'package:creafacil_app/features/autenticacion/domain/cambios_perfil.dart';
 import 'package:creafacil_app/features/autenticacion/domain/sesion.dart';
 import 'package:creafacil_app/features/autenticacion/domain/usuario.dart';
 import 'package:creafacil_app/features/autenticacion/presentation/autenticacion_providers.dart';
@@ -108,8 +109,13 @@ class RepositorioAutenticacionFalso implements AutenticacionRepository {
       sesionPrueba();
   Future<Usuario> Function(String token) alPerfil = (_) async => clientePrueba;
 
+  /// Por defecto aplica los cambios sobre [clientePrueba], como la API.
+  Future<Usuario> Function(CambiosPerfil cambios) alActualizar = (c) async =>
+      aplicarCambios(clientePrueba, c);
+
   final llamadas = <String>[];
   DatosRegistro? ultimoRegistro;
+  final cambiosEnviados = <CambiosPerfil>[];
 
   @override
   Future<Sesion> iniciarSesion({
@@ -132,7 +138,23 @@ class RepositorioAutenticacionFalso implements AutenticacionRepository {
     llamadas.add('perfil');
     return alPerfil(token);
   }
+
+  @override
+  Future<Usuario> actualizarPerfil(CambiosPerfil cambios) {
+    llamadas.add('actualizar');
+    cambiosEnviados.add(cambios);
+    return alActualizar(cambios);
+  }
 }
+
+/// Usuario con los [cambios] aplicados (lo que devolvería la API).
+Usuario aplicarCambios(Usuario usuario, CambiosPerfil cambios) => Usuario(
+  id: usuario.id,
+  nombre: cambios.nombre ?? usuario.nombre,
+  email: usuario.email,
+  telefono: cambios.cambiaTelefono ? cambios.telefono : usuario.telefono,
+  rol: usuario.rol,
+);
 
 /// Overrides de la sesión para montar la app sin red ni plugins.
 List<Override> sesionSimulada({

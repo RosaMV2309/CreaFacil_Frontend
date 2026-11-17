@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/red.dart';
 import '../data/almacen_sesion.dart';
 import '../domain/autenticacion_repository.dart';
+import '../domain/cambios_perfil.dart';
 import '../domain/politica_acceso.dart';
 import '../domain/sesion.dart';
+import '../domain/usuario.dart';
 import 'autenticacion_providers.dart';
 import 'estado_sesion.dart';
 import 'proveedor_token_sesion.dart';
@@ -17,6 +19,7 @@ import 'proveedor_token_sesion.dart';
 ///   valida con `GET /auth/perfil` y la borra si la API responde 401.
 /// - Inicia sesión o registra y guarda la sesión, **solo** si el rol puede
 ///   usar esta app ([PoliticaAcceso]).
+/// - Actualiza el perfil (`PATCH /auth/perfil`) y la sesión guardada.
 /// - Cierra la sesión al caducar el token (8 h, sin renovación) o si la API
 ///   responde 401 a una petición autenticada, con el aviso
 ///   [avisoSesionExpirada].
@@ -120,6 +123,37 @@ class SesionController extends AsyncNotifier<EstadoSesion> {
       state = AsyncData(EstadoSesion(sesion: sesion));
     }
     return sesion;
+  }
+
+  /// `PATCH /auth/perfil` [RF-01][RN-05]: cambia el nombre o el teléfono de
+  /// la persona con la sesión iniciada (el servidor usa siempre la del token).
+  ///
+  /// Con el 200 actualiza el usuario de la sesión en memoria y en el almacén.
+  /// El token y su caducidad no cambian, así que no se pide uno nuevo ni se
+  /// reinicia el temporizador. Lanza `ApiException` si la API lo rechaza
+  /// (400 con detalles por campo; un 401 además cierra la sesión) y
+  /// [StateError] si no hay sesión.
+  Future<Usuario> actualizarPerfil(CambiosPerfil cambios) async {
+    final actual = _proveedor.sesion;
+    if (actual == null) {
+      throw StateError('No hay una sesión iniciada');
+    }
+    if (!cambios.hayCambios) {
+      return actual.usuario;
+    }
+    final usuario = await _repositorio.actualizarPerfil(cambios);
+    // Si mientras tanto la sesión se cerró (401, caducidad o cierre), no se
+    // vuelve a abrir.
+    if (_proveedor.sesion?.token != actual.token) {
+      return usuario;
+    }
+    final sesion = actual.conUsuario(usuario);
+    _proveedor.sesion = sesion;
+    await _guardarSinFallar(sesion);
+    if (ref.mounted) {
+      state = AsyncData(EstadoSesion(sesion: sesion));
+    }
+    return usuario;
   }
 
   /// Cierra la sesión a petición de la usuaria y borra todo lo guardado.
