@@ -7,7 +7,8 @@ import '../../../../core/widgets/cf_logo.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 
 /// Estructura común de las pantallas de cuenta de la app [RNF-05]:
-/// encabezado azul con la marca, botón para volver al inicio y una tarjeta
+/// encabezado azul con la marca, botón para volver (al inicio, por defecto) y
+/// una tarjeta
 /// centrada de ancho máximo legible (móvil, tablet y escritorio).
 class PlantillaAcceso extends StatelessWidget {
   const PlantillaAcceso({
@@ -15,6 +16,8 @@ class PlantillaAcceso extends StatelessWidget {
     required this.child,
     this.subtitulo,
     this.anchoMaximo = 480,
+    this.volverA = Rutas.inicio,
+    this.textoVolver = 'Volver al inicio',
     super.key,
   });
 
@@ -22,6 +25,10 @@ class PlantillaAcceso extends StatelessWidget {
   final String? subtitulo;
   final Widget child;
   final double anchoMaximo;
+
+  /// Ruta del botón de volver del encabezado y su descripción accesible.
+  final String volverA;
+  final String textoVolver;
 
   static const claveTarjeta = ValueKey('plantilla-acceso-tarjeta');
 
@@ -33,9 +40,9 @@ class PlantillaAcceso extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Volver al inicio',
+          tooltip: textoVolver,
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.go(Rutas.inicio),
+          onPressed: () => context.go(volverA),
         ),
         title: const CfMarcaEncabezado(),
       ),

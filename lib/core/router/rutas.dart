@@ -11,11 +11,14 @@ abstract final class Rutas {
   /// Perfil del cliente. Exige sesión (RF-01, RF-02).
   static const perfil = '/perfil';
 
+  /// Editar el nombre y el teléfono. Exige sesión (RF-01, RN-05).
+  static const perfilEditar = '/perfil/editar';
+
   /// Catálogo de componentes Cf*. Solo existe en modo debug.
   static const componentes = '/dev/componentes';
 
   /// Rutas que exigen la sesión iniciada.
-  static const protegidas = {perfil};
+  static const protegidas = {perfil, perfilEditar};
 
   /// Rutas que no tienen sentido con la sesión iniciada.
   static const soloSinSesion = {acceso, registro};

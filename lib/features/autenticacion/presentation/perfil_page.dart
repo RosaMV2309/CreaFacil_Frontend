@@ -9,11 +9,10 @@ import '../domain/usuario.dart';
 import 'autenticacion_providers.dart';
 import 'widgets/plantilla_acceso.dart';
 
-/// «Mi perfil» del cliente, de solo lectura [RF-01].
+/// «Mi perfil» del cliente [RF-01][RN-05].
 ///
-/// La edición (`PATCH /auth/perfil`) llegará con la subfase 1.2 del backend:
-/// mientras tanto, «Editar perfil» aparece deshabilitado con el texto
-/// «Disponible próximamente».
+/// Muestra los datos de la sesión (que se actualizan al editar el perfil),
+/// lleva a «Editar perfil» (`/perfil/editar`) y permite cerrar la sesión.
 class PerfilPage extends ConsumerWidget {
   const PerfilPage({super.key});
 
@@ -53,24 +52,13 @@ class PerfilPage extends ConsumerWidget {
                   valor: usuario.telefono ?? textoSinTelefono,
                 ),
                 SizedBox(height: tokens.espacioXl),
-                Wrap(
-                  spacing: tokens.espacioMd,
-                  runSpacing: tokens.espacioMd,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    const CfButton(
-                      key: claveEditar,
-                      label: 'Editar perfil',
-                      icon: Icons.edit_outlined,
-                      variant: CfButtonVariant.outlined,
-                      tooltip: 'Disponible próximamente',
-                      onPressed: null,
-                    ),
-                    Text(
-                      'Disponible próximamente',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+                CfButton(
+                  key: claveEditar,
+                  label: 'Editar perfil',
+                  icon: Icons.edit_outlined,
+                  variant: CfButtonVariant.outlined,
+                  expanded: true,
+                  onPressed: () => context.go(Rutas.perfilEditar),
                 ),
                 SizedBox(height: tokens.espacioMd),
                 CfButton(

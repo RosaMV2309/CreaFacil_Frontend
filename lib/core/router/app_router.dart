@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/autenticacion/presentation/acceso_page.dart';
 import '../../features/autenticacion/presentation/autenticacion_providers.dart';
+import '../../features/autenticacion/presentation/editar_perfil_page.dart';
 import '../../features/autenticacion/presentation/perfil_page.dart';
+import '../../features/autenticacion/presentation/proteccion_salida.dart';
 import '../../features/autenticacion/presentation/registro_page.dart';
 import '../../features/dev/presentation/componentes_page.dart';
 import '../../features/inicio/presentation/inicio_page.dart';
@@ -63,6 +65,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Rutas.perfil,
         builder: (context, state) => const PerfilPage(),
+        routes: [
+          // Ruta hija: «Atrás» (Android o navegador) vuelve a «Mi perfil».
+          GoRoute(
+            path: Rutas.perfilEditar.substring(Rutas.perfil.length + 1),
+            builder: (context, state) => const EditarPerfilPage(),
+            // Con cambios sin guardar, cualquier salida pide confirmación.
+            // Si la sesión ya se cerró (401 o caducidad), se sale sin más.
+            onExit: (context, state) {
+              final iniciada =
+                  ref.read(sesionControllerProvider).value?.iniciada ?? false;
+              if (!iniciada ||
+                  !ref.read(proteccionSalidaPerfilProvider).hayCambios) {
+                return true;
+              }
+              return EditarPerfilPage.confirmarSalida(context);
+            },
+          ),
+        ],
       ),
       // Catálogo de componentes para revisión visual: solo en modo debug,
       // no existe en las compilaciones de perfil ni de producción.

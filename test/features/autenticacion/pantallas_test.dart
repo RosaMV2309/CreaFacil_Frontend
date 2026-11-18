@@ -336,7 +336,7 @@ void main() {
   });
 
   group('Mi perfil', () {
-    testWidgets('muestra los datos del cliente y la edición deshabilitada', (
+    testWidgets('muestra los datos del cliente y la edición habilitada', (
       tester,
     ) async {
       almacen.sesion = sesionPrueba();
@@ -350,9 +350,13 @@ void main() {
       expect(find.text('Cliente'), findsOneWidget);
       expect(
         tester.widget<CfButton>(find.byKey(PerfilPage.claveEditar)).onPressed,
-        isNull,
+        isNotNull,
       );
-      expect(find.text('Disponible próximamente'), findsOneWidget);
+      expect(find.textContaining('próximamente'), findsNothing);
+
+      await tester.tap(find.byKey(PerfilPage.claveEditar));
+      await tester.pumpAndSettle();
+      expect(await ruta(tester), Rutas.perfilEditar);
     });
 
     testWidgets('sin teléfono muestra «No indicado»', (tester) async {

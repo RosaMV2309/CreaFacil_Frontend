@@ -147,11 +147,22 @@ La app permite **crear una cuenta, iniciar sesión y ver «Mi perfil»**. Códig
    se aceptan espacios, guiones y paréntesis), contraseña de 8 a 72 caracteres y su confirmación
    (solo en la app; no se envía). Al registrarse, la sesión queda iniciada.
 3. `/acceso`: correo y contraseña (con botón para mostrarla). No hay «¿Olvidaste tu contraseña?» en la v1.
-4. `/perfil` (protegida): nombre, correo, teléfono y rol «Cliente». La edición llegará con
-   `PATCH /auth/perfil` (subfase 1.2 del backend): por ahora «Editar perfil» está deshabilitado
-   con «Disponible próximamente». «Cerrar sesión» pide confirmación.
+4. `/perfil` (protegida): nombre, correo, teléfono y rol «Cliente», con «Editar perfil» y
+   «Cerrar sesión» (pide confirmación).
+5. `/perfil/editar` (protegida, subfase 1.3b · RF-01, RN-05): nombre y teléfono precargados con
+   las mismas validaciones que el registro; el correo es de solo lectura («El correo no se puede
+   cambiar»). «Borrar teléfono» vacía el campo y al guardar envía `telefono: null`.
+   - Solo se envían los campos que cambiaron (`CambiosPerfil`); sin cambios, «Guardar cambios»
+     queda deshabilitado y no se llama a la API. Enter en el teléfono guarda.
+   - Los errores por campo del 400 aparecen en su campo; el resto, con `CfMessage`.
+   - Tras el 200 se actualiza la sesión en memoria y en el almacenamiento seguro (el token no
+     cambia), se vuelve a «Mi perfil» con el aviso «Tus datos se guardaron correctamente.» y el
+     saludo «Hola, `nombre`» del inicio muestra el nombre nuevo.
+   - Con cambios sin guardar, cualquier salida («Cancelar», volver del encabezado o «Atrás» de
+     Android y del navegador) pide confirmación con `CfConfirmDialog` (`onExit` de la ruta y
+     `ProteccionSalida`). Un 401 cierra la sesión sin preguntar.
 
-API consumida: `POST /auth/registro`, `POST /auth/login` y `GET /auth/perfil`.
+API consumida: `POST /auth/registro`, `POST /auth/login`, `GET /auth/perfil` y `PATCH /auth/perfil`.
 
 **Sesión y token**
 
