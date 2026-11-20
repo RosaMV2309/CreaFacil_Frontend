@@ -1,0 +1,26 @@
+# Pantalla de carga (splash) nativa de CreaFácil [RNF-05] [RF-24].
+# Regenerar con: dart run flutter_native_splash:create
+#
+# - Logotipo completo centrado sobre el fondo crema de la paleta (#FFF8F5).
+# - Android 12 o superior (API 31+) recorta el icono del splash en un círculo
+#   y no admite el logotipo completo: ahí se usa la ilustración del icono de la
+#   app sobre el rosa pastel (#F7B8CE).
+# - No añade esperas: el sistema la retira en cuanto Flutter pinta el primer
+#   fotograma (no se usa preserve/remove). En la web, web/index.html escucha el
+#   evento «flutter-first-frame» para retirarlo: si se regenera, comprobar que
+#   esa línea y el viewport sin «user-scalable=no» siguen ahí.
+# - Solo colores de la paleta oficial.
+flutter_native_splash:
+  color: "#FFF8F5"
+  image: assets/images/logo.png
+
+  android_12:
+    color: "#FFF8F5"
+    image: assets/icons/icono_app_foreground.png
+    icon_background_color: "#F7B8CE"
+
+  android: true
+  ios: false
+  web: true
+  web_image_mode: center
+  fullscreen: false
