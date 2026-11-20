@@ -2,7 +2,8 @@
 #
 # - calidad: formato, análisis, pruebas con umbral de cobertura, paleta
 #   oficial y compilación web.
-# - android: compila el APK (debug y release) y los publica como artefactos.
+# - android: compila los APK (debug para el emulador, debug para el
+#   teléfono por USB y release) y los publica como artefactos.
 name: CI
 
 on:
@@ -23,6 +24,10 @@ env:
   # URL de la API para el APK de pruebas: el emulador de Android ve el PC en
   # 10.0.2.2 y el backend local escucha en el puerto 3000.
   API_URL_EMULADOR: http://10.0.2.2:3000/api/v1
+  # URL de la API para el teléfono real por cable USB: con
+  # «adb reverse tcp:3000 tcp:3000», localhost:3000 del teléfono es el
+  # backend del PC [RF-24].
+  API_URL_USB: http://localhost:3000/api/v1
 
 jobs:
   calidad:
@@ -127,6 +132,18 @@ jobs:
       - name: Compilar el APK debug (pruebas en el emulador)
         run: flutter build apk --debug --dart-define=API_URL=${{ env.API_URL_EMULADOR }}
 
+      # APK para el teléfono por USB: misma variante debug (HTTP permitido a
+      # localhost), pero con la API en localhost:3000 para usarla con
+      # «adb reverse tcp:3000 tcp:3000». Se copia aparte porque los dos APK
+      # debug se llaman app-debug.apk.
+      - name: Compilar el APK debug para el teléfono por USB
+        run: |
+          mkdir -p apk-usb
+          cp build/app/outputs/flutter-apk/app-debug.apk apk-emulador.apk
+          flutter build apk --debug --dart-define=API_URL=${{ env.API_URL_USB }}
+          mv build/app/outputs/flutter-apk/app-debug.apk apk-usb/app-debug.apk
+          mv apk-emulador.apk build/app/outputs/flutter-apk/app-debug.apk
+
       # APK release: comprueba la configuración de producción (R8, recursos y
       # firma). Se firma con la clave de depuración hasta tener una propia y
       # exige HTTPS, así que necesita una API publicada con https://.
@@ -138,6 +155,14 @@ jobs:
         with:
           name: creafacil-apk-debug
           path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publicar el APK para el teléfono por USB
+        uses: actions/upload-artifact@v7
+        with:
+          name: creafacil-apk-usb
+          path: apk-usb/app-debug.apk
           if-no-files-found: error
           retention-days: 14
 

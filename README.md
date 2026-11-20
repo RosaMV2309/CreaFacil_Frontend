@@ -68,10 +68,11 @@ dart run tool/cobertura.dart --detalle  # además, la cobertura de cada archivo
 | Job | Pasos |
 |---|---|
 | Análisis, pruebas y build web | `flutter pub get` · `dart format --set-exit-if-changed` · `flutter analyze` · `flutter test --coverage` · umbral del 80 % · paleta oficial (`git grep` de colores fuera de `app_colors.dart`) · `flutter build web --release` |
-| APK de Android | Java 17 (Temurin) · `flutter build apk --debug` (con `API_URL=http://10.0.2.2:3000/api/v1`) · `flutter build apk --release` |
+| APK de Android | Java 17 (Temurin) · `flutter build apk --debug` (con `API_URL=http://10.0.2.2:3000/api/v1`) · `flutter build apk --debug` para el teléfono por USB (con `API_URL=http://localhost:3000/api/v1`) · `flutter build apk --release` |
 
 Artefactos de cada ejecución (pestaña **Actions** → la ejecución → **Artifacts**): `cobertura-lcov`,
-`creafacil-web`, `creafacil-apk-debug` y `creafacil-apk-release`. Se guardan 14 días.
+`creafacil-web`, `creafacil-apk-debug` (emulador, `10.0.2.2`), `creafacil-apk-usb` (teléfono por cable,
+`localhost` + `adb reverse`) y `creafacil-apk-release`. Se guardan 14 días.
 
 ## Compilación
 
@@ -84,6 +85,10 @@ flutter build web --release --dart-define=API_URL=https://<api>/api/v1
 ### Android (APK)
 
 - Identificador: `com.creafacil.creafacil_app` · Nombre visible: **CreaFácil** · `minSdk` 24 (Android 7.0) · `targetSdk` 36.
+- Pantalla de carga (splash) nativa con `flutter_native_splash` (`flutter_native_splash.yaml`; regenerar con
+  `dart run flutter_native_splash:create`): logotipo completo sobre crema `#FFF8F5` en Android ≤ 11 y en la web.
+  **Android 12 o superior** recorta el icono del splash en un círculo, así que ahí se muestra la ilustración del
+  icono de la app sobre rosa pastel `#F7B8CE`. Sin esperas: desaparece con el primer fotograma de Flutter.
 - La URL de la API y el WhatsApp se fijan **al compilar** con `--dart-define`:
 
 ```sh
@@ -112,6 +117,81 @@ escuchar en `0.0.0.0`.
 El plugin `jni` escribe en `%LOCALAPPDATA%\Pub\Cache\hosted\pub.dev\jni-*\android\.cxx`: añade
 `%LOCALAPPDATA%\Pub` a las exclusiones del antivirus o usa una caché de Pub en una carpeta excluida
 (`$env:PUB_CACHE="C:\Proyectos\CreaFacil\.trabajo\pub-cache"` antes de `flutter pub get` y `flutter build apk`).
+
+## Instalar en mi teléfono (Android por cable USB) [RF-24]
+
+Guía probada para un **Xiaomi Redmi Note 10S** (MIUI / HyperOS) con la **depuración USB activada y autorizada**.
+Sirve para cualquier Android 7.0 o superior. Se usa el APK `creafacil-apk-usb` de la CI, que apunta a
+`http://localhost:3000/api/v1`; con `adb reverse` ese `localhost` del teléfono es el backend de tu PC, por el cable.
+
+> El APK es de **depuración**: no se publica en tiendas y solo sirve para pruebas y demostraciones.
+> La versión firmada para entregar queda para la Fase 8.
+
+Comandos para PowerShell (`adb` está en `%LOCALAPPDATA%\Android\Sdk\platform-tools`):
+
+```powershell
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+```
+
+1. **Arranca el backend en el PC** (déjalo abierto en su ventana):
+
+   ```powershell
+   cd C:\Proyectos\CreaFacil\CreaFacil_Backend
+   npm run dev          # escucha en http://localhost:3000
+   ```
+
+2. **Descarga el APK** de la última ejecución en verde de la CI (pestaña **Actions** → la ejecución →
+   **Artifacts** → `creafacil-apk-usb`, y descomprime el zip en `apk\`), o con GitHub CLI:
+
+   ```powershell
+   cd C:\Proyectos\CreaFacil
+   gh run list -R RosaMV2309/CreaFacil_Frontend -w CI -L 5          # copia el id de la ejecución
+   gh run download <id> -R RosaMV2309/CreaFacil_Frontend -n creafacil-apk-usb -D apk
+   ```
+
+3. **Conecta el cable** (modo «Transferencia de archivos») y comprueba que el teléfono aparece como `device`:
+
+   ```powershell
+   & $adb devices
+   ```
+
+4. **Instala la app** (`-r` reinstala conservando los datos si ya estaba):
+
+   ```powershell
+   & $adb install -r apk\app-debug.apk       # debe terminar en «Success»
+   ```
+
+5. **Conecta el teléfono con la API del PC** (repítelo **cada vez** que desconectes el cable o reinicies `adb`):
+
+   ```powershell
+   & $adb reverse tcp:3000 tcp:3000
+   ```
+
+6. **Abre «CreaFácil»** en el teléfono (o `& $adb shell monkey -p com.creafacil.creafacil_app 1`). Verás la
+   pantalla de carga con el logotipo y después el inicio con **«Conectado con la API»**.
+   Las fotos del catálogo llegan como `http://localhost:3000/uploads/…`, así que también se cargan por el cable.
+
+### Problemas frecuentes en Xiaomi
+
+| Síntoma | Solución |
+|---|---|
+| `INSTALL_FAILED_USER_RESTRICTED` o «Instalación cancelada por el usuario» | Ajustes → Opciones de desarrollador → activa **«Instalar vía USB»** (MIUI pide iniciar sesión con la **cuenta Mi** y a veces tener una **SIM** insertada). También ayudan **«Depuración USB (ajustes de seguridad)»** y desactivar **«Optimización de MIUI»** (al final de la lista; reinicia el teléfono). Si durante la instalación aparece un aviso en el teléfono, pulsa **Instalar** antes de que pasen unos segundos. |
+| `adb devices` muestra `unauthorized` | Desbloquea el teléfono y acepta «¿Permitir depuración USB?» (marca «Permitir siempre»). Si no aparece: Opciones de desarrollador → **Revocar autorizaciones de depuración USB**, desconecta y vuelve a conectar, o `& $adb kill-server; & $adb devices`. |
+| `adb devices` sale vacío | Cambia el modo USB a «Transferencia de archivos», prueba otro cable o puerto (algunos cables solo cargan). |
+| La app muestra **«Sin conexión con la API»** | Falta `adb reverse tcp:3000 tcp:3000` (se pierde al desconectar el cable) o el backend está apagado: comprueba que `npm run dev` sigue en marcha y vuelve a ejecutar el paso 5. Después pulsa reintentar o reabre la app. |
+
+### Plan B: instalar copiando el APK
+
+Si `adb install` sigue fallando:
+
+1. Con el cable en modo **«Transferencia de archivos»**, copia `apk\app-debug.apk` a la carpeta `Download` del teléfono
+   desde el Explorador de Windows.
+2. En el teléfono, abre la app **«Archivos»** o **«Administrador de archivos»** y toca `app-debug.apk`.
+3. Si lo pide, permite **«Instalar apps desconocidas»** para esa app y vuelve atrás.
+4. Si aparece la protección de MIUI o **Google Play Protect**, elige **«Instalar de todas formas»**
+   (es tu propio APK de depuración).
+5. La app sigue necesitando el backend del PC: deja el cable conectado con la depuración USB activa y ejecuta
+   igualmente `& $adb reverse tcp:3000 tcp:3000` (pasos 1 y 5).
 
 ## Estructura
 
