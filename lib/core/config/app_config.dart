@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Configuración que se inyecta al compilar con `--dart-define`.
 ///
 /// Ejemplo:
@@ -25,5 +27,14 @@ abstract final class AppConfig {
   /// `--dart-define=WHATSAPP_NUMERO=593000000000`
   static const String whatsappNumero = String.fromEnvironment(
     'WHATSAPP_NUMERO',
+  );
+
+  /// Muestra las herramientas de desarrollo (botón «Ver componentes» y ruta
+  /// `/dev/componentes`). Por defecto, solo en modo debug (`flutter run`).
+  /// El APK de presentación se compila con
+  /// `--dart-define=MOSTRAR_HERRAMIENTAS_DEV=false`.
+  static const bool mostrarHerramientasDev = bool.fromEnvironment(
+    'MOSTRAR_HERRAMIENTAS_DEV',
+    defaultValue: kDebugMode,
   );
 }
