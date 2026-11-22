@@ -136,19 +136,33 @@ jobs:
       # localhost), pero con la API en localhost:3000 para usarla con
       # «adb reverse tcp:3000 tcp:3000». Se copia aparte porque los dos APK
       # debug se llaman app-debug.apk.
+      # Es el APK de presentación: el número de WhatsApp del negocio sale de
+      # la variable del repositorio WHATSAPP_NUMERO (si no existe o está
+      # vacía, el botón queda deshabilitado) y se ocultan las herramientas de
+      # desarrollo (catálogo /dev/componentes).
       - name: Compilar el APK debug para el teléfono por USB
+        env:
+          WHATSAPP_NUMERO: ${{ vars.WHATSAPP_NUMERO }}
         run: |
           mkdir -p apk-usb
           cp build/app/outputs/flutter-apk/app-debug.apk apk-emulador.apk
-          flutter build apk --debug --dart-define=API_URL=${{ env.API_URL_USB }}
+          flutter build apk --debug \
+            --dart-define=API_URL=${{ env.API_URL_USB }} \
+            --dart-define=WHATSAPP_NUMERO="$WHATSAPP_NUMERO" \
+            --dart-define=MOSTRAR_HERRAMIENTAS_DEV=false
           mv build/app/outputs/flutter-apk/app-debug.apk apk-usb/app-debug.apk
           mv apk-emulador.apk build/app/outputs/flutter-apk/app-debug.apk
 
       # APK release: comprueba la configuración de producción (R8, recursos y
       # firma). Se firma con la clave de depuración hasta tener una propia y
       # exige HTTPS, así que necesita una API publicada con https://.
+      # También recibe WHATSAPP_NUMERO: es la configuración de producción y el
+      # número es el contacto público del negocio. Las herramientas de
+      # desarrollo ya están ocultas en release (kDebugMode es false).
       - name: Compilar el APK release
-        run: flutter build apk --release
+        env:
+          WHATSAPP_NUMERO: ${{ vars.WHATSAPP_NUMERO }}
+        run: flutter build apk --release --dart-define=WHATSAPP_NUMERO="$WHATSAPP_NUMERO"
 
       - name: Publicar el APK debug
         uses: actions/upload-artifact@v7
