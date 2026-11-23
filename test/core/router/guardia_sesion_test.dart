@@ -1,8 +1,10 @@
+import 'package:creafacil_app/core/config/herramientas_dev.dart';
 import 'package:creafacil_app/core/router/guardia_sesion.dart';
 import 'package:creafacil_app/core/router/rutas.dart';
 import 'package:creafacil_app/features/autenticacion/presentation/estado_sesion.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../helpers/app_prueba.dart';
 import '../../helpers/sesion_falsa.dart';
@@ -90,6 +92,34 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Catálogo de componentes'), findsOneWidget);
+    });
+
+    testWidgets('con MOSTRAR_HERRAMIENTAS_DEV=false no hay botón ni ruta', (
+      tester,
+    ) async {
+      final contenedor = await montarApp(
+        tester,
+        extra: [mostrarHerramientasDevProvider.overrideWithValue(false)],
+      );
+      expect(find.text('Ver componentes'), findsNothing);
+      final router = contenedor.read(appRouterProviderParaPrueba);
+      final rutas = router.configuration.routes.whereType<GoRoute>().map(
+        (r) => r.path,
+      );
+      expect(rutas, isNot(contains(Rutas.componentes)));
+      router.go(Rutas.componentes);
+      await tester.pumpAndSettle();
+      expect(find.text('Catálogo de componentes'), findsNothing);
+    });
+
+    testWidgets('con las herramientas activas se ve «Ver componentes»', (
+      tester,
+    ) async {
+      await montarApp(
+        tester,
+        extra: [mostrarHerramientasDevProvider.overrideWithValue(true)],
+      );
+      expect(find.text('Ver componentes'), findsOneWidget);
     });
   });
 }

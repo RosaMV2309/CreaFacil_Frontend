@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/herramientas_dev.dart';
 import '../../../core/design_system/cf_components.dart';
 import '../../../core/router/rutas.dart';
 import '../../../core/widgets/cf_logo.dart';
@@ -75,16 +76,7 @@ class InicioPage extends StatelessWidget {
                         ),
                         SizedBox(height: tokens.espacioMd),
                         BotonWhatsApp(expanded: movil),
-                        if (kDebugMode) ...[
-                          SizedBox(height: tokens.espacioSm),
-                          CfButton(
-                            label: 'Ver componentes',
-                            variant: CfButtonVariant.text,
-                            icon: Icons.widgets_outlined,
-                            tooltip: 'Solo en modo desarrollo',
-                            onPressed: () => context.push(Rutas.componentes),
-                          ),
-                        ],
+                        const _BotonComponentes(),
                       ],
                     ),
                   ),
@@ -109,5 +101,28 @@ class InicioPage extends StatelessWidget {
           content: Text('El catálogo estará disponible muy pronto.'),
         ),
       );
+  }
+}
+
+/// Acceso al catálogo de componentes; solo con las herramientas de
+/// desarrollo activas.
+class _BotonComponentes extends ConsumerWidget {
+  const _BotonComponentes();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(mostrarHerramientasDevProvider)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: EdgeInsets.only(top: CfTokens.of(context).espacioSm),
+      child: CfButton(
+        label: 'Ver componentes',
+        variant: CfButtonVariant.text,
+        icon: Icons.widgets_outlined,
+        tooltip: 'Solo en modo desarrollo',
+        onPressed: () => context.push(Rutas.componentes),
+      ),
+    );
   }
 }

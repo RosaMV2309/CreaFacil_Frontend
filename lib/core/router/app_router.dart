@@ -10,6 +10,7 @@ import '../../features/autenticacion/presentation/proteccion_salida.dart';
 import '../../features/autenticacion/presentation/registro_page.dart';
 import '../../features/dev/presentation/componentes_page.dart';
 import '../../features/inicio/presentation/inicio_page.dart';
+import '../config/herramientas_dev.dart';
 import 'guardia_sesion.dart';
 import 'rutas.dart';
 
@@ -84,9 +85,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Catálogo de componentes para revisión visual: solo en modo debug,
-      // no existe en las compilaciones de perfil ni de producción.
-      if (kDebugMode)
+      // Catálogo de componentes para revisión visual: solo con las
+      // herramientas de desarrollo activas (por defecto, en modo debug). No
+      // existe en el APK de presentación ni en producción.
+      if (ref.read(mostrarHerramientasDevProvider))
         GoRoute(
           path: Rutas.componentes,
           builder: (context, state) => const ComponentesPage(),

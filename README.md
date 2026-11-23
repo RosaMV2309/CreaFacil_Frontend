@@ -34,6 +34,7 @@ flutter run -d emulator-5554 --dart-define=API_URL=http://10.0.2.2:3000/api/v1
 |---|---|---|
 | `API_URL` | `http://localhost:3000/api/v1` | Dirección de la API |
 | `WHATSAPP_NUMERO` | vacío (botón deshabilitado) | Número del negocio, solo dígitos con el prefijo del país (`593…`) |
+| `MOSTRAR_HERRAMIENTAS_DEV` | `true` en debug (`flutter run`), `false` en release | Muestra el botón «Ver componentes» y la ruta `/dev/componentes` |
 
 ## Comandos
 
@@ -73,6 +74,33 @@ dart run tool/cobertura.dart --detalle  # además, la cobertura de cada archivo
 Artefactos de cada ejecución (pestaña **Actions** → la ejecución → **Artifacts**): `cobertura-lcov`,
 `creafacil-web`, `creafacil-apk-debug` (emulador, `10.0.2.2`), `creafacil-apk-usb` (teléfono por cable,
 `localhost` + `adb reverse`) y `creafacil-apk-release`. Se guardan 14 días.
+
+El APK `creafacil-apk-usb` es el **APK de presentación**:
+
+- Recibe el número de WhatsApp del negocio desde la **variable del repositorio** `WHATSAPP_NUMERO`
+  (`--dart-define=WHATSAPP_NUMERO=${{ vars.WHATSAPP_NUMERO }}`). El número **no** está escrito en el código.
+  Si la variable no existe o está vacía, el APK se compila igual y el botón de WhatsApp queda deshabilitado.
+  El APK release también la recibe, porque es la configuración de producción.
+- Se compila con `--dart-define=MOSTRAR_HERRAMIENTAS_DEV=false`: no muestra «Ver componentes» ni existe la ruta
+  `/dev/componentes`. El APK del emulador (`creafacil-apk-debug`) y `flutter run` los siguen mostrando.
+
+> El repositorio es público: cualquiera puede descargar los artefactos y el número queda dentro del APK.
+> Es aceptable porque es el contacto público del negocio.
+
+### Crear o cambiar el número de WhatsApp
+
+Formato: código de país sin «+» ni espacios (por ejemplo, `5939XXXXXXXX`).
+
+- **En la web:** repositorio → **Settings** → **Secrets and variables** → **Actions** → pestaña **Variables** →
+  **New repository variable** (nombre `WHATSAPP_NUMERO`), o edita la existente con el lápiz.
+- **Con GitHub CLI:**
+
+  ```powershell
+  gh variable set WHATSAPP_NUMERO -R RosaMV2309/CreaFacil_Frontend --body "<número>"
+  ```
+
+El cambio se aplica en la **siguiente ejecución** de la CI (un push, un PR o **Actions → CI → Run workflow**);
+los APK ya descargados conservan el número anterior.
 
 ## Compilación
 
@@ -170,6 +198,9 @@ $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 6. **Abre «CreaFácil»** en el teléfono (o `& $adb shell monkey -p com.creafacil.creafacil_app 1`). Verás la
    pantalla de carga con el logotipo y después el inicio con **«Conectado con la API»**.
    Las fotos del catálogo llegan como `http://localhost:3000/uploads/…`, así que también se cargan por el cable.
+   En el inicio, el botón **WhatsApp** está activo y abre el chat del negocio (el número sale de la variable
+   `WHATSAPP_NUMERO`; para cambiarlo, mira «Crear o cambiar el número de WhatsApp» en la sección de la CI).
+   El botón «Ver componentes» **no** aparece: el APK de presentación tiene `MOSTRAR_HERRAMIENTAS_DEV=false`.
 
 ### Problemas frecuentes en Xiaomi
 
